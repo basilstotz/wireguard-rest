@@ -1,0 +1,10 @@
+[Unit]
+Description=Mumble Moderator
+After=network.target
+ 
+[Service]
+ExecStart=/usr/local/bin/wireguard-rest-daemon
+Restart=always
+ 
+[Install]
+WantedBy=multi-user.target

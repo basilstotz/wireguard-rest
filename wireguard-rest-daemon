@@ -1,0 +1,128 @@
+#!/usr/bin/env node
+
+var http = require('http');
+var url= require('url');
+//var mysql = require('mysql');
+const { execFileSync } = require('child_process');
+//const fs = require('fs');
+
+const apikey="7abbcf87b820a9ffd8ea12fb300b61f1";
+const server_public="l8fvNR0oq+1i5+QZJ+PdVfAHenzLSryA37Wi5eE3rhc=";
+
+function peer(client, allowed_ips){
+
+    let args;
+    let opts= { encoding: "utf8" };
+
+    if(allowed_ips==""){
+        args= ['set','wg0','peer',client,'remove' ];
+    }else{
+	args= ['set','wg0','peer',client,'allowed-ips',allowed_ips+'/12' ];
+    }
+    
+    let answer=execFileSync('wg', args,opts);
+
+    if(answer==""){
+	return server_public;
+    }else{
+	return "";
+    }
+}
+
+
+http.createServer( (request, response) => {
+  const { headers, method, url } = request;
+    let body = [];
+    let inhalt;
+    let antwort={};
+  request.on('error', (err) => {
+    console.error(err);
+  }).on('data', (chunk) => {
+    body.push(chunk);
+  }).on('end', () => {
+     body = Buffer.concat(body).toString();
+
+      response.on('error', (err) => {
+      console.error(err);
+     });
+
+      try {
+         inhalt=JSON.parse(body);
+      } catch (e) {
+   	 console.log("error: parse error");
+ 	 inhalt=false;
+      }
+      
+      if(inhalt){
+          if(inhalt.key && inhalt.publickey && inhalt.allowedips){
+              if(inhalt.key==apikey){
+		  //console.log("info: peer set "  + inhalt.publickey + " " . inhalt.allowedips);
+	          antwort=peer(inhalt.publickey, inhalt.allowedips);	  
+	      }else{console.log("error: wrong apikey");}
+          }else{console.log("error: args not complete");}
+      } //else{console.log("error: incorrect json");}
+      
+ 
+      
+      response.statusCode = 200;
+    response.setHeader('Content-Type', 'application/json');
+    // Note: the 2 lines above could be replaced with this next one:
+    // response.writeHead(200, {'Content-Type': 'application/json'})
+    
+      
+    //const responseBody = { headers, method, url, body };
+
+    response.write(JSON.stringify(antwort));
+    response.end();
+    // Note: the 2 lines above could be replaced with this next one:
+    // response.end(JSON.stringify(responseBody))
+
+    // END OF NEW STUFF
+  });
+}).listen(9090,"127.0.0.1");
+
+
+
+
+/*
+
+const options = {
+  key: fs.readFileSync('ssl/key.pem'),
+  cert: fs.readFileSync('ssl/cert.pem')
+};
+
+
+
+function peer_remove(client){  
+    const child = execFile('wg',, (error, stdout, stderr) => {
+        if (error) {
+	   console.log(stderr);
+           throw error;
+        }
+        //console.log(stdout);
+    });
+    return server_public;
+}
+*/
+
+
+/*
+*/
+/*
+var con = mysql.createConnection({
+  host: "localhost",
+  user: "yourusername",
+  password: "yourpassword",
+  database: "mydb"
+});
+
+con.connect(function(err) {
+  if (err) throw err;
+  console.log("Connected!");
+  var sql = "INSERT INTO customers (name, address) VALUES ('Company Inc', 'Highway 37')";
+  con.query(sql, function (err, result) {
+    if (err) throw err;
+    console.log("1 record inserted");
+  });
+});
+*/
